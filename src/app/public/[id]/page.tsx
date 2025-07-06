@@ -21,26 +21,29 @@ export default function PublicDocumentPage() {
 
   useEffect(() => {
     const fetchDoc = async () => {
-      const { data, error } = await supabase
-        .from("documents")
-        .select(`
-          *,
-          profiles (
-            username
-          )
-        `)
-        .eq("id", id)
-        .eq("is_public", true)
-        .single();
+  const { data, error } = await supabase
+    .from("documents")
+    .select(
+      `
+        *,
+        profiles (
+          username
+        )
+      `
+    )
+    .eq("id", id)
+    .eq("is_public", true)
+    .single();
 
-      if (error) {
-        console.error(error);
-        setDoc(null);
-      } else {
-        setDoc(data);
-      }
-      setLoading(false);
-    };
+  if (error) {
+    console.error(error);
+    setDoc(null);
+  } else {
+    setDoc(data ? (data as DocumentData) : null);
+  }
+  setLoading(false);
+};
+
 
     fetchDoc();
   }, [id]);
