@@ -13,37 +13,39 @@ interface DocumentData {
 }
 
 export default function PublicDocumentPage() {
-  const params = useParams();
-  const { id } = params as { id: string };
+  const params = useParams() as { id: string };
+  const { id } = params;
 
   const [doc, setDoc] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDoc = async () => {
-  const { data, error } = await supabase
-    .from("documents")
-    .select(
-      `
-        *,
-        profiles (
-          username
+      const { data, error } = await supabase
+        .from("documents")
+        .select(
+          `
+            id,
+            title,
+            content,
+            created_at,
+            profiles (
+              username
+            )
+          `
         )
-      `
-    )
-    .eq("id", id)
-    .eq("is_public", true)
-    .single();
+        .eq("id", id)
+        .eq("is_public", true)
+        .single();
 
-  if (error) {
-    console.error(error);
-    setDoc(null);
-  } else {
-    setDoc(data ? (data as DocumentData) : null);
-  }
-  setLoading(false);
-};
-
+      if (error) {
+        console.error(error);
+        setDoc(null);
+      } else {
+        setDoc(data as DocumentData);
+      }
+      setLoading(false);
+    };
 
     fetchDoc();
   }, [id]);
@@ -64,7 +66,10 @@ export default function PublicDocumentPage() {
       <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
         <h1 className="text-3xl font-bold text-black text-center">{doc.title}</h1>
         <p className="text-sm text-gray-500 text-center mb-4">
-          Published by <span className="font-semibold">{doc.profiles?.username || "Anonymous"}</span>
+          Published by{" "}
+          <span className="font-semibold">
+            {doc.profiles?.username || "Anonymous"}
+          </span>
         </p>
         <div
           className="text-base leading-relaxed text-black space-y-4"
