@@ -19,32 +19,76 @@ export default function NewDocumentPage() {
   });
 
   const handleSave = async () => {
-    if (!editor) return;
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      alert("Not authenticated");
-      setLoading(false);
-      return;
-    }
+  if (!editor) return;
+  setLoading(true);
 
-    const { error } = await supabase.from("documents").insert([
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert("Not authenticated");
+    setLoading(false);
+    return;
+  }
+
+  // 1️⃣ Insert the document and get the ID
+  const { data, error } = await supabase
+    .from("documents")
+    .insert([
       {
         user_id: user.id,
         title,
         content: editor.getHTML(),
         is_public: isPublic,
       },
-    ]);
+    ])
+    .select();
 
-    if (error) {
-      console.error(error);
-      alert("Error creating document");
-    } else {
-      router.push("/documents");
-    }
+  if (error || !data || !data[0]) {
+    console.error(error);
+    alert("Error creating document");
     setLoading(false);
-  };
+    return;
+  }
+
+  const documentId = data[0].id;
+
+  // 2️⃣ Extract mentions from content
+  const mentionedUsernames = [...new Set(
+    editor.getHTML().match(/@(\w+)/g)?.map((m) => m.slice(1)) || []
+  )];
+
+  // 3️⃣ Get user IDs for mentioned usernames
+  if (mentionedUsernames.length > 0) {
+    const { data: mentionedProfiles, error: mentionError } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in("username", mentionedUsernames);
+
+    if (mentionError) {
+      console.error("Error fetching mentioned users:", mentionError);
+    }
+
+    // 4️⃣ Upsert permissions
+    for (const profile of mentionedProfiles || []) {
+      const { error: permError } = await supabase
+        .from("document_permissions")
+        .upsert({
+          document_id: documentId,
+          user_id: profile.id,
+          can_edit: false,
+        });
+
+      if (permError) {
+        console.error(`Error adding permission for ${profile.username}:`, permError);
+      }
+    }
+  }
+
+  router.push("/documents");
+  setLoading(false);
+};
+
+
+    
 
   return (
     <main

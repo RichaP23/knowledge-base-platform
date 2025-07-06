@@ -4,11 +4,19 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
 
+interface DocumentData {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  profiles?: { username: string };
+}
+
 export default function PublicDocumentPage() {
   const params = useParams();
   const { id } = params as { id: string };
 
-  const [doc, setDoc] = useState<any>(null);
+  const [doc, setDoc] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,19 +58,15 @@ export default function PublicDocumentPage() {
 
   return (
     <main className="p-8 max-w-3xl mx-auto">
-        
       <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
         <h1 className="text-3xl font-bold text-black text-center">{doc.title}</h1>
-
         <p className="text-sm text-gray-500 text-center mb-4">
           Published by <span className="font-semibold">{doc.profiles?.username || "Anonymous"}</span>
         </p>
-
         <div
           className="text-base leading-relaxed text-black space-y-4"
           dangerouslySetInnerHTML={{ __html: doc.content }}
         />
-
         <p className="mt-6 text-sm text-gray-500 text-right">
           Created on {new Date(doc.created_at).toLocaleDateString()}
         </p>
