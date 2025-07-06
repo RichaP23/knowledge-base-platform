@@ -45,31 +45,41 @@ A collaborative documentation platform inspired by Confluence, enabling teams to
 ```bash
 git clone https://github.com/RichaP23/knowledge-base-platform.git
 cd knowledge-base-platform
-## ⚙️ Local Development
+```
+
+---
 
 ### 2️⃣ Install Dependencies
 
 ```bash
 npm install
-## 3️⃣ Configure Environment Variables
-
-Create a `.env.local` file in the project root:
-
-NEXT_PUBLIC_SUPABASE_URL=<your Supabase project URL>
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<your Supabase anon public key>
-
-**Tip:** For production deployments, you can also set:
-
+```
 
 ---
 
-## 4️⃣ Start Dev Server
+### 3️⃣ Configure Environment Variables
+
+Create a `.env.local` file in the project root with the following contents:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=<your Supabase project URL>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your Supabase anon public key>
+```
+
+**Tip:** For production deployments, you can also set these in your Vercel project settings.
+
+---
+
+### 4️⃣ Start Dev Server
 
 ```bash
 npm run dev
+```
 
-The app will be available at:
-http://localhost:3000
+The app will be available at:  
+[http://localhost:3000](http://localhost:3000)
+
+---
 
 ## 🛠️ Database Setup
 
@@ -108,14 +118,15 @@ http://localhost:3000
 
 ## 📝 Project Structure
 
+```
 /src
-/app
-/auth (login/register)
-/dashboard (authenticated dashboard)
-/public (public document pages)
-/components (shared UI components)
-/lib (Supabase client, helpers)
-
+  /app
+    /auth         (login/register)
+    /dashboard    (authenticated dashboard)
+    /public       (public document pages)
+  /components     (shared UI components)
+  /lib            (Supabase client, helpers)
+```
 
 ---
 
@@ -129,7 +140,7 @@ http://localhost:3000
 
 *(Optional: if you created demo accounts)*
 
-- **Email:** `jeantomy6@gmail.com`  
+- **Email:** `jeantomy6@gmail.com`
 - **Password:** `testing`
 
 ---
@@ -140,4 +151,3 @@ This app is deployed on **Vercel**:
 
 - Deploys automatically on `main` branch pushes.
 - Environment variables configured in Vercel project settings.
-
