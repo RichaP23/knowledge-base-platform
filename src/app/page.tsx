@@ -1,34 +1,25 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export default function HomePage() {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const getSession = async () => {
+    const redirect = async () => {
       const { data } = await supabase.auth.getUser();
       if (data.user) {
-        setUserEmail(data.user.email ?? null);
+        // Already logged in -> go to documents
+        router.replace("/documents");
+      } else {
+        // Not logged in -> go to login
+        router.replace("/login");
       }
     };
-    getSession();
-  }, []);
+    redirect();
+  }, [router]);
 
-  return (
-    <main className="flex flex-col items-center justify-center h-screen space-y-4">
-      <h1 className="text-3xl font-bold">Welcome to Your Knowledge Base</h1>
-      {userEmail && (
-        <p className="text-gray-600">Logged in as {userEmail}</p>
-      )}
-      <Link
-        href="/documents"
-        className="px-4 py-2 bg-blue-600 text-white rounded"
-      >
-        Go to Documents
-      </Link>
-    </main>
-  );
+  return null; // nothing to render
 }

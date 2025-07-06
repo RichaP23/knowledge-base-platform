@@ -15,7 +15,12 @@ export default function PublicDocumentPage() {
     const fetchDoc = async () => {
       const { data, error } = await supabase
         .from("documents")
-        .select("*")
+        .select(`
+          *,
+          profiles (
+            username
+          )
+        `)
         .eq("id", id)
         .eq("is_public", true)
         .single();
@@ -37,17 +42,25 @@ export default function PublicDocumentPage() {
     return (
       <main className="p-8 max-w-xl mx-auto text-center">
         <h1 className="text-2xl font-semibold mb-4">Document Not Found</h1>
-        <p className="text-gray-600">This document is either private or does not exist.</p>
+        <p className="text-gray-600">
+          This document is either private or does not exist.
+        </p>
       </main>
     );
 
   return (
     <main className="p-8 max-w-3xl mx-auto">
+        
       <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
         <h1 className="text-3xl font-bold text-black text-center">{doc.title}</h1>
+
+        <p className="text-sm text-gray-500 text-center mb-4">
+          Published by <span className="font-semibold">{doc.profiles?.username || "Anonymous"}</span>
+        </p>
+
         <div
-        className="text-base leading-relaxed text-black space-y-4"
-        dangerouslySetInnerHTML={{ __html: doc.content }}
+          className="text-base leading-relaxed text-black space-y-4"
+          dangerouslySetInnerHTML={{ __html: doc.content }}
         />
 
         <p className="mt-6 text-sm text-gray-500 text-right">
