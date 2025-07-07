@@ -14,120 +14,118 @@ export default function NewDocumentPage() {
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
 
-
   const editor = useEditor({
     extensions: [StarterKit],
     content: "",
   });
 
-const handleSave = async () => {
-  if (!editor) return;
-  setLoading(true);
+  const handleSave = async () => {
+    if (!editor) return;
+    setLoading(true);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    alert("Not authenticated");
-    setLoading(false);
-    return;
-  }
-
-  // 1️⃣ Insert the document
-  const { data, error } = await supabase
-    .from("documents")
-    .insert([
-      {
-        user_id: user.id,
-        title,
-        content: editor.getHTML(),
-        is_public: isPublic,
-      },
-    ])
-    .select();
-
-  if (error || !data || !data[0]) {
-    console.error(error);
-    alert("Error creating document");
-    setLoading(false);
-    return;
-  }
-
-  const documentId = data[0].id;
-
-  // 2️⃣ Upload each selected file and insert attachment records
-  for (const file of files) {
-    /* eslint-disable @typescript-eslint/no-unused-vars */
-const { data: uploadData, error: uploadError } = await supabase.storage
-  .from("document-attachments")
-  .upload(`${documentId}/${file.name}`, file);
-/* eslint-enable @typescript-eslint/no-unused-vars */
-
-    if (uploadError) {
-      console.error("File upload error:", uploadError);
-      alert(`Error uploading file: ${file.name}`);
-      continue;
-    }
-    if (uploadData) {
-  console.log("Uploaded file path:", uploadData.path);
-}
-
-    // Get public URL
-    const { data: publicUrlData } = supabase
-      .storage
-      .from("document-attachments")
-      .getPublicUrl(`${documentId}/${file.name}`);
-
-    if (!publicUrlData?.publicUrl) {
-      console.error("Error getting public URL for file:", file.name);
-      continue;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert("Not authenticated");
+      setLoading(false);
+      return;
     }
 
-    // Insert attachment record
-    await supabase
-      .from("attachments")
-      .insert({
-        document_id: documentId,
-        url: publicUrlData.publicUrl,
-      });
-  }
+    // 1️⃣ Insert the document
+    const { data, error } = await supabase
+      .from("documents")
+      .insert([
+        {
+          user_id: user.id,
+          title,
+          content: editor.getHTML(),
+          is_public: isPublic,
+        },
+      ])
+      .select();
 
-  // 3️⃣ Extract mentions
-  const mentionedUsernames = [...new Set(
-    editor.getHTML().match(/@(\w+)/g)?.map((m) => m.slice(1)) || []
-  )];
-
-  if (mentionedUsernames.length > 0) {
-    const { data: mentionedProfiles, error: mentionError } = await supabase
-      .from("profiles")
-      .select("id, username")
-      .in("username", mentionedUsernames);
-
-    if (mentionError) {
-      console.error("Error fetching mentioned users:", mentionError);
+    if (error || !data || !data[0]) {
+      console.error(error);
+      alert("Error creating document");
+      setLoading(false);
+      return;
     }
 
-    for (const profile of mentionedProfiles || []) {
-      const { error: permError } = await supabase
-        .from("document_permissions")
-        .upsert({
+    const documentId = data[0].id;
+
+    // 2️⃣ Upload each selected file and insert attachment records
+    for (const file of files) {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("document-attachments")
+        .upload(`${documentId}/${file.name}`, file);
+
+      if (uploadError) {
+        console.error("File upload error:", uploadError);
+        alert(`Error uploading file: ${file.name}`);
+        continue;
+      }
+
+      if (uploadData) {
+        console.log("File uploaded to path:", uploadData.path);
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase
+        .storage
+        .from("document-attachments")
+        .getPublicUrl(uploadData.path);
+
+      if (!publicUrlData?.publicUrl) {
+        console.error("Error getting public URL for file:", file.name);
+        continue;
+      }
+
+      // Insert attachment record
+      await supabase
+        .from("attachments")
+        .insert({
           document_id: documentId,
-          user_id: profile.id,
-          can_edit: false,
+          url: publicUrlData.publicUrl,
         });
+    }
 
-      if (permError) {
-        console.error(`Error adding permission for ${profile.username}:`, permError);
+    // 3️⃣ Extract mentions
+    const mentionedUsernames = [
+      ...new Set(
+        editor.getHTML().match(/@(\w+)/g)?.map((m) => m.slice(1)) || []
+      ),
+    ];
+
+    if (mentionedUsernames.length > 0) {
+      const { data: mentionedProfiles, error: mentionError } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .in("username", mentionedUsernames);
+
+      if (mentionError) {
+        console.error("Error fetching mentioned users:", mentionError);
+      }
+
+      for (const profile of mentionedProfiles || []) {
+        const { error: permError } = await supabase
+          .from("document_permissions")
+          .upsert({
+            document_id: documentId,
+            user_id: profile.id,
+            can_edit: false,
+          });
+
+        if (permError) {
+          console.error(
+            `Error adding permission for ${profile.username}:`,
+            permError
+          );
+        }
       }
     }
-  }
 
-  router.push("/documents");
-  setLoading(false);
-};
-
-
-
-
-    
+    router.push("/documents");
+    setLoading(false);
+  };
 
   return (
     <main
@@ -218,26 +216,26 @@ const { data: uploadData, error: uploadError } = await supabase.storage
       >
         <EditorContent editor={editor} />
       </div>
+
       {/* Attachment field */}
-        <label style={{ display: "block", marginBottom: "1rem" }}>
+      <label style={{ display: "block", marginBottom: "1rem" }}>
         <span style={{ display: "block", marginBottom: "0.5rem", color: "#555" }}>
-            Attach JPEG images (optional)
+          Attach JPEG images (optional)
         </span>
         <input
-            type="file"
-            accept="image/jpeg"
-            multiple
-            onChange={(e) => {
-        const selectedFiles = e.target.files;
-        if (selectedFiles) {
-            setFiles(Array.from(selectedFiles));
-        } else {
-            setFiles([]);
-        }
-        }}
-
+          type="file"
+          accept="image/jpeg"
+          multiple
+          onChange={(e) => {
+            const selectedFiles = e.target.files;
+            if (selectedFiles) {
+              setFiles(Array.from(selectedFiles));
+            } else {
+              setFiles([]);
+            }
+          }}
         />
-        </label>
+      </label>
 
       {/* Public checkbox */}
       <label

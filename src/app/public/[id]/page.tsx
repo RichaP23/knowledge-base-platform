@@ -123,8 +123,9 @@ export default function PublicDocumentPage() {
                 >
                   <Image
                     src={att.url}
-                    alt="Attachment"
-                    className="w-40 h-auto border rounded hover:opacity-80 transition"
+                    alt="attachment"
+                    width={600} // Adjust as needed
+                    height={400} // Adjust as needed
                   />
                 </a>
               ))}
