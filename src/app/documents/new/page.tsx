@@ -12,13 +12,15 @@ export default function NewDocumentPage() {
   const [isPublic, setIsPublic] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [files, setFiles] = useState<File[]>([]);
+
 
   const editor = useEditor({
     extensions: [StarterKit],
     content: "",
   });
 
-  const handleSave = async () => {
+const handleSave = async () => {
   if (!editor) return;
   setLoading(true);
 
@@ -29,7 +31,7 @@ export default function NewDocumentPage() {
     return;
   }
 
-  // 1️⃣ Insert the document and get the ID
+  // 1️⃣ Insert the document
   const { data, error } = await supabase
     .from("documents")
     .insert([
@@ -51,12 +53,43 @@ export default function NewDocumentPage() {
 
   const documentId = data[0].id;
 
-  // 2️⃣ Extract mentions from content
+  // 2️⃣ Upload each selected file and insert attachment records
+  for (const file of files) {
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("document-attachments")
+      .upload(`${documentId}/${file.name}`, file);
+
+    if (uploadError) {
+      console.error("File upload error:", uploadError);
+      alert(`Error uploading file: ${file.name}`);
+      continue;
+    }
+
+    // Get public URL
+    const { data: publicUrlData } = supabase
+      .storage
+      .from("document-attachments")
+      .getPublicUrl(`${documentId}/${file.name}`);
+
+    if (!publicUrlData?.publicUrl) {
+      console.error("Error getting public URL for file:", file.name);
+      continue;
+    }
+
+    // Insert attachment record
+    await supabase
+      .from("attachments")
+      .insert({
+        document_id: documentId,
+        url: publicUrlData.publicUrl,
+      });
+  }
+
+  // 3️⃣ Extract mentions
   const mentionedUsernames = [...new Set(
     editor.getHTML().match(/@(\w+)/g)?.map((m) => m.slice(1)) || []
   )];
 
-  // 3️⃣ Get user IDs for mentioned usernames
   if (mentionedUsernames.length > 0) {
     const { data: mentionedProfiles, error: mentionError } = await supabase
       .from("profiles")
@@ -67,7 +100,6 @@ export default function NewDocumentPage() {
       console.error("Error fetching mentioned users:", mentionError);
     }
 
-    // 4️⃣ Upsert permissions
     for (const profile of mentionedProfiles || []) {
       const { error: permError } = await supabase
         .from("document_permissions")
@@ -86,6 +118,8 @@ export default function NewDocumentPage() {
   router.push("/documents");
   setLoading(false);
 };
+
+
 
 
     
@@ -179,6 +213,26 @@ export default function NewDocumentPage() {
       >
         <EditorContent editor={editor} />
       </div>
+      {/* Attachment field */}
+        <label style={{ display: "block", marginBottom: "1rem" }}>
+        <span style={{ display: "block", marginBottom: "0.5rem", color: "#555" }}>
+            Attach JPEG images (optional)
+        </span>
+        <input
+            type="file"
+            accept="image/jpeg"
+            multiple
+            onChange={(e) => {
+        const selectedFiles = e.target.files;
+        if (selectedFiles) {
+            setFiles(Array.from(selectedFiles));
+        } else {
+            setFiles([]);
+        }
+        }}
+
+        />
+        </label>
 
       {/* Public checkbox */}
       <label

@@ -18,26 +18,39 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [files, setFiles] = useState([]);
 
   useEffect(() => {
-  const fetchDocuments = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id;
+    const fetchDocuments = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const userId = user?.id;
 
-    const { data, error } = await supabase
-      .from("documents_with_profiles")
-      .select("*")
-      .or(`is_public.eq.true,user_id.eq.${userId}`)
-      .order("created_at", { ascending: false });
+      let query = supabase
+        .from("documents_with_profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (error) console.error(error);
-    else setDocuments(data || []);
-    setLoading(false);
-  };
+      // Safely construct query conditionally
+      if (userId) {
+        query = query.or(`is_public.eq.true,user_id.eq.${userId}`);
+      } else {
+        query = query.eq("is_public", true);
+      }
 
-  fetchDocuments();
-}, []);
+      const { data, error } = await query;
 
+      if (error) {
+        console.error("Supabase query error:", JSON.stringify(error, null, 2));
+      } else {
+        setDocuments(data || []);
+      }
+      setLoading(false);
+    };
+
+    fetchDocuments();
+  }, []);
 
   return (
     <main
