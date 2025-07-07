@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
-
+import Image from "next/image";
 interface DocumentData {
   id: string;
   title: string;
@@ -121,7 +121,7 @@ export default function PublicDocumentPage() {
                   rel="noopener noreferrer"
                   className="block"
                 >
-                  <img
+                  <Image
                     src={att.url}
                     alt="Attachment"
                     className="w-40 h-auto border rounded hover:opacity-80 transition"

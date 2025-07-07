@@ -66,6 +66,9 @@ const { data: uploadData, error: uploadError } = await supabase.storage
       alert(`Error uploading file: ${file.name}`);
       continue;
     }
+    if (uploadData) {
+  console.log("Uploaded file path:", uploadData.path);
+}
 
     // Get public URL
     const { data: publicUrlData } = supabase

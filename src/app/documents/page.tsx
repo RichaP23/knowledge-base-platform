@@ -18,7 +18,6 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [files, setFiles] = useState([]);
 
   useEffect(() => {
     const fetchDocuments = async () => {
