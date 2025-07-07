@@ -55,9 +55,11 @@ const handleSave = async () => {
 
   // 2️⃣ Upload each selected file and insert attachment records
   for (const file of files) {
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("document-attachments")
-      .upload(`${documentId}/${file.name}`, file);
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+const { data: uploadData, error: uploadError } = await supabase.storage
+  .from("document-attachments")
+  .upload(`${documentId}/${file.name}`, file);
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
     if (uploadError) {
       console.error("File upload error:", uploadError);
